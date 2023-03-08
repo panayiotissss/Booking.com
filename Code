@@ -1,18 +1,3 @@
-#Needs to include : 
-
-#Data analysis.....(simple manipulations etc , averages , regressions, Nice charts)
-#Naive model
-
-#Models with transformations (log)
-#Models without transformations (removed outliers)
-
-#For all 8 models feature extraction
-#For all 8 models hyper-parameter tuning
-
-#Try to deal with hotel room type?
-
-
-
 ##Cleaning the environment
 rm(list=ls())
 
