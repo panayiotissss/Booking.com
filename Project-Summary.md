@@ -6,3 +6,4 @@ Firstly a check for missing values was performed and shown that there are 23 mis
 Missing values.PNG
 
 Moving on, box plots of the ReviewsCount, Rating, and Price variables were created  to  visually identify outliers.  Then also the Tukey's method was used to identify outliers for each variable, which were finally chosen to be removed from the dataset so they do not influence the analysis further.
+![Alt text](https://github.com/panayiotissss/Booking.com/blob/395e86589dec9f4d3e80856e22e53395690f3085/Missing%20values.PNG)
