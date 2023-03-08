@@ -1,0 +1,674 @@
+#Needs to include : 
+
+#Data analysis.....(simple manipulations etc , averages , regressions, Nice charts)
+#Naive model
+
+#Models with transformations (log)
+#Models without transformations (removed outliers)
+
+#For all 8 models feature extraction
+#For all 8 models hyper-parameter tuning
+
+#Try to deal with hotel room type?
+
+
+
+##Cleaning the environment
+rm(list=ls())
+
+#Installing Packages ----
+
+library(readr)
+library(tidyr)
+library(dplyr)
+library(naniar)
+library(missForest)
+library(ggplot2)
+library(plyr)
+library(tidyverse)
+library(RColorBrewer)
+library(ggthemes)
+
+BookingDataset <- read_csv("C:/Users/User/Desktop/Data/Data Analytics/Projects/Booking.com/HotelFinalDataset.csv")
+View(BookingDataset)
+
+summary(BookingDataset)
+
+#Data Cleaning -----
+BookingDataset <- BookingDataset[, -c(1, 5 ,9)]
+
+
+#Check & Deal with for missing values -> 23 missing values 
+sum(is.na(BookingDataset))
+
+colSums(is.na(BookingDataset))
+
+
+#Converting to dataframe
+BookingDataset <- as.data.frame(BookingDataset)
+
+
+
+BookingDataset<- BookingDataset[-c(475:483),] #Removing these observations as it can be derived that the rows removed cover75% of the total missing & these missing values where not missing at random (Had to do with the city)
+
+BookingDataset <- BookingDataset %>%  # These values where imputed as it seems that the observations are missing at random.
+  mutate(ReviewsCount = ifelse(is.na(ReviewsCount), mean(ReviewsCount, na.rm = TRUE),ReviewsCount)) %>%
+  mutate(Rating = ifelse(is.na(Rating), mean(Rating, na.rm = TRUE),Rating))
+
+#Sanity Check = 0 -> Great
+colSums(is.na(BookingDataset))
+
+#Check for duplicates = 0 -> Great
+sum(duplicated(BookingDataset))
+
+
+#Check & Deal with outliers
+#Create a boxplot of a variable in a dataset
+ggplot(BookingDataset, aes(y = ReviewsCount)) +
+  geom_boxplot()
+
+ggplot(BookingDataset, aes(y = Rating)) +
+  geom_boxplot()
+
+ggplot(BookingDataset, aes(y = `Price Euros`)) +
+  geom_boxplot()
+
+
+#Calculate the IQR for a Reviews in a dataset
+ReviewsCount_iqr <- IQR(BookingDataset$ReviewsCount)
+
+#Identify outliers using Tukey's method
+Reviews_outliers <- which(BookingDataset$ReviewsCount < quantile(BookingDataset$ReviewsCount, 0.25) - 1.5 * ReviewsCount_iqr |
+                            BookingDataset$ReviewsCount > quantile(BookingDataset$ReviewsCount, 0.75) + 1.5 * ReviewsCount_iqr)
+
+
+#Calculate the IQR for a Rating in a dataset
+Rating_iqr <- IQR(BookingDataset$Rating)
+
+#Identify outliers using Tukey's method
+Rating_outliers <- which(BookingDataset$Rating < quantile(BookingDataset$Rating, 0.25) - 1.5 * Rating_iqr |
+                           BookingDataset$Rating > quantile(BookingDataset$Rating, 0.75) + 1.5 * Rating_iqr)
+
+
+#Calculate the IQR for a Price in a dataset
+Price_iqr <- IQR(BookingDataset$`Price Euros`)
+
+#Identify outliers using Tukey's method
+Price_outliers <- which(BookingDataset$`Price Euros` < quantile(BookingDataset$`Price Euros`, 0.25) - 1.5 * Price_iqr |
+                          BookingDataset$`Price Euros` > quantile(BookingDataset$`Price Euros`, 0.75) + 1.5 * Price_iqr)
+
+
+
+#Analysis ----
+
+#Check Descriptives (Average Price per Area/Average Reviews per Area/ Average Rating per Area) ----
+
+#Removing the outliers so they do not influence the project further
+
+BookingDataset <- BookingDataset[-c(Reviews_outliers, Rating_outliers, Price_outliers), ]
+
+#Group the dataset by City and calculate the average price, rating, and reviews count for each group
+
+summary(BookingDataset)
+
+GroupedBy<- BookingDataset %>%
+  dplyr::group_by(Place, .groups = "drop") %>%
+  dplyr::summarize(Average.Price = mean(`Price Euros`, na.rm = TRUE),
+                   Average.Rating = mean(Rating, na.rm = TRUE),
+                   Average.ReviewsCount = mean(ReviewsCount, na.rm = TRUE))
+
+
+View(GroupedBy)
+
+
+GroupedByCity <- GroupedBy %>%
+  separate(Place, into = c("City", "Area"), sep = ",", remove = FALSE) %>%
+  mutate(Area = trimws(coalesce(Area, Place))) 
+
+View(GroupedByCity)
+
+
+CleanData<-GroupedByCity[, -c(1, 2,4)]
+
+View(CleanData)
+
+CleanData <- CleanData %>%
+  group_by(Area) 
+
+
+
+CleanData<-ddply(CleanData,.(Area),colwise(mean))
+View(CleanData)
+
+
+# Create a new data frame with only major areas
+MajorCities <- subset(CleanData, Area %in% c("Amsterdam", "Rotterdam", "The Hague", "Utrecht", "Groningen", "Maastricht" , "Eindhoven", "Haarlem", "Delft"))
+Rest <- subset(CleanData, !(Area %in% c("Amsterdam", "Rotterdam", "The Hague", "Utrecht", "Groningen", "Maastricht", "Eindhoven", "Haarlem", "Delft")))
+
+
+#Plots Splitted in major citries and rest: (Villages may have 2-3 listings that may be 200 so then it limits the analysis because it appears a village has a higher average price than Amsterdam)
+
+
+
+#Major Cities
+
+#Price
+ggplot(MajorCities, aes(x = reorder(Area, -Average.Price), y = Average.Price, fill = Area)) +
+  geom_col() +
+  labs(title = "Average Price per Place", x = "Place", y = "Average Price") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_brewer(palette = "Set1")
+
+
+#Rating
+ggplot(MajorCities, aes(x = reorder(Area, -Average.ReviewsCount), y = Average.ReviewsCount, fill = Area)) +
+  geom_col() +
+  labs(title = "Average Reviews Count per Place", x = "Place", y = "Average Reviews") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_brewer(palette = "Set3")
+
+
+#ReviesCount
+ggplot(MajorCities, aes(x = reorder(Area, -Average.Rating), y = Average.Rating, fill = Area)) +
+  geom_col() +
+  labs(title = "Average Rating per Place", x = "Place", y = "Average Rating") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_brewer(palette = "Set3")
+
+
+
+#Rest Locations
+
+
+# Define a vector of 14 color hex codes because brewer is limited
+
+my_colors <- c("#8dd3c7", "#ffffb3", "#bebada", "#fb8072", "#80b1d3", "#fdb462", 
+                        "#b3de69", "#fccde5", "#d9d9d9", "#bc80bd", "#ccebc5", "#ffed6f","#a6cee3","#ffeda0")
+                        
+#Price
+ggplot(Rest, aes(x = reorder(Area, -Average.Price), y = Average.Price, fill = Area)) +
+  geom_col() +
+  labs(title = "Average Price per Place", x = "Place", y = "Average Price") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_manual(values = my_colors)
+
+#Rating
+ggplot(Rest, aes(x = reorder(Area, -Average.ReviewsCount), y = Average.ReviewsCount, fill = Area)) +
+  geom_col() +
+  labs(title = "Average Reviews Count per Place", x = "Place", y = "Average Reviews Count") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_manual(values = my_colors)
+
+#ReviewsCount
+ggplot(Rest, aes(x = reorder(Area, -Average.Rating), y = Average.Rating, fill = Area)) +
+  geom_col() +
+  labs(title = "Average Reviews Count per Place", x = "Place", y = "Average Reviews Count") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_manual(values = my_colors)
+
+
+
+
+
+
+
+#Exploring the relationship between Price / Rating / Reviews/No.----
+
+#Correlation Matrix
+numeric_cols <- BookingDataset %>%
+  select_if(is.numeric)
+
+#Create the correlation matrix
+cor_mat <- cor(numeric_cols)
+print(cor_mat)
+
+
+##PRICE
+#Relationship between price & rating
+RatingtoPriceModel <- lm(`Price Euros` ~ Rating, data = BookingDataset)
+summary(RatingtoPriceModel)
+
+
+#Create scatterplot with regression line
+
+ggplot(BookingDataset, aes(x = Rating, y = `Price Euros`)) +
+  geom_point(color = "#0072B2") +
+  geom_smooth(method = "lm", se = FALSE, color = "#D55E00") +
+  labs(title = "Relationship between Rating and Reviews", x = "Rating", y = "Price") +
+  theme_bw()
+
+
+
+
+#Relationship between price & reviews count
+ReviewtoPriceModel <-lm(`Price Euros`~ ReviewsCount, data = BookingDataset )
+summary(ReviewtoPriceModel)
+
+
+ggplot(BookingDataset, aes(x = ReviewsCount, y = `Price Euros`)) +
+  geom_point(color = "#0072B2") +
+  geom_smooth(method = "lm", se = FALSE, color = "#D55E00") +
+  labs(title = "Relationship between Rating and Reviews", x = "Reviews", y = "Price") +
+  theme_bw()
+
+
+
+##RATING
+
+#Relationship between rating & price
+PricetoRatingModel <- lm(Rating ~`Price Euros`, data = BookingDataset)
+summary(PricetoRatingModel)
+
+
+#Scatterplot with regression line
+
+ggplot(BookingDataset, aes(x = `Price Euros`, y = Rating)) +
+  geom_point(color = "#b3de69") +
+  geom_smooth(method = "lm", se = FALSE, color = "#D55E00") +
+  labs(title = "Relationship between Rating and Reviews", x = "Price", y = "Rating") +
+  theme_bw()
+
+
+
+
+#Relationship between rating & reviews count
+ReviewtoRatingModel <- lm(Rating ~ ReviewsCount, data = BookingDataset)
+summary(ReviewtoRatingModel)
+
+
+
+#Scatterplot with regression line
+
+ggplot(BookingDataset, aes(x = ReviewsCount, y = Rating)) +
+  geom_point(color = "#b3de69") +
+  geom_smooth(method = "lm", se = FALSE, color = "#D55E00") +
+  labs(title = "Relationship between Rating and Reviews", x = "Reviews", y = "Rating") +
+  theme_bw()
+
+
+
+#REVIEWSCOUNT
+#Relationship between reviews count & price
+PricetoReviewModel <- lm(Reviews ~`Price Euros`, data = BookingDataset)
+summary(PricetoReviewModel)
+
+
+ggplot(BookingDataset, aes(x = `Price Euros`, y = ReviewsCount)) +
+  geom_point(color = "#bc80bd") +
+  geom_smooth(method = "lm", se = FALSE, color = "#D55E00") +
+  labs(title = "Relationship between Hotel Prices and Reviews", x = "Price", y = "Reviews") +
+  theme_bw()
+
+
+#Relationship between reviews count & rating
+RatingtoReviewModel <- lm(ReviewsCount ~ Rating, data = BookingDataset)
+summary(RatingtoReviewModel)
+
+ggplot(BookingDataset, aes(x = Rating, y = ReviewsCount)) +
+  geom_point(color = "#bc80bd") +
+  geom_smooth(method = "lm", se = FALSE, color = "#D55E00") +
+  labs(title = "Relationship between Rating and Reviews", x = "Rating", y = "Reviews") +
+  theme_bw()
+
+
+
+#Add a bit of aggregation ----
+
+
+#Now lets add cities into the mix! -> STILL ON HOTEL LEVEL : Spliting to major & minor cities.
+
+CitySplit <- BookingDataset %>%
+  separate(Place, into = c("City", "Area"), sep = ",", remove = FALSE) %>%
+  mutate(Area = trimws(coalesce(Area, Place))) 
+
+Clean <- CitySplit %>%
+  dplyr::group_by(Area, .groups = "drop")
+
+
+
+View(Clean)
+
+
+Clean <-Clean[, -c(2, 3,9)]
+
+
+
+
+Clean$Major_city <- ifelse(Clean$Area %in% c("Amsterdam", "Rotterdam", "The Hague", "Utrecht", "Groningen", "Maastricht" , "Eindhoven", "Haarlem", "Delft") , "Yes", "No")
+
+#Separate data for major cities and rest of locations
+Major_cities_data <- filter(Clean, Major_city == "Yes")
+Rest_of_locations_data <- filter(Clean, Major_city == "No")
+
+view(Major_cities_data)
+view(Rest_of_locations_data)
+
+#Create linear regression models for each group
+MajorCitiesModel <- lm(`Price Euros` ~ Rating + ReviewsCount, data = Major_cities_data)
+RestModel <- lm(`Price Euros` ~ Rating + ReviewsCount, data = Rest_of_locations_data)
+
+
+summary(MajorCitiesModel)
+summary(RestModel)
+
+#We can see that for the MajorCities only Rating is significant , For the Rest also reviews count.
+
+#Compare coefficients of predictor variables between the two models
+summary(MajorCitiesModel)$coefficients
+summary(RestModel)$coefficients
+
+
+ggplot(Major_cities_data, aes(x = Rating, y = `Price Euros`, color = ReviewsCount)) + geom_point() + ggtitle("Major Cities")
+ggplot(Rest_of_locations_data, aes(x = Rating, y = `Price Euros`, color = ReviewsCount)) + geom_point() + ggtitle("Rest of Locations")
+
+#One possible explanation for the difference in the relationships between the variables for the two groups could be the level of competition. It is possible that major cities have more competition and thus, ratings and reviews may not be as important in determining the price of a hotel. On the other hand, for the rest of the locations, where there may be less competition, ratings and reviews may be more important in determining the price. However, further research is needed to explore this and other factors that may contribute to the differences observed.
+
+
+#Regress based on individual cities!----
+
+
+# create a vector of unique city names
+cities <- unique(Clean$Area)
+
+
+# create an empty list to store regression results for each city
+Regression_Results <- list()
+
+
+# loop through each city and run a regression
+
+for (city in cities) {
+  # subset the data for the current city
+  city_data <- subset(Clean, Area == city)
+  
+  # run the regression
+  Regression_model <- lm(`Price Euros` ~ Rating + ReviewsCount, data = city_data)
+  
+  # save the regression results to the list
+  Regression_Results[[city]] <- Regression_model}
+
+# print the summary of the regression results for each city
+for (i in seq_along(Regression_Results)) {
+  cat("\n", cities[i], "\n")
+  print(summary(Regression_Results[[i]]))}
+
+
+
+
+
+
+
+##################################################################################
+
+#Price Predictive Modeling ----
+
+install.packages("rsample")  
+library(rsample)            
+install.packages("tidymodels")
+library(tidymodels)
+
+library(caret)
+library(randomForest)
+
+
+
+
+
+
+
+#Actual Models
+set.seed(123)
+
+SplitProportion <- initial_split(Clean, prop = 0.7, strata = "Rating")
+train_data <- training(SplitProportion)
+test_data <- testing(SplitProportion)
+
+view(train_data)
+
+#Naive Model
+
+# Calculate metrics for Naive Model
+naive_rmse <- RMSE(test_data$`Price Euros`, rep(mean(train_data$`Price Euros`), length(test_data$`Price Euros`)))
+naive_mae <- MAE(test_data$`Price Euros`, rep(mean(train_data$`Price Euros`), length(test_data$`Price Euros`)))
+naive_rsq <- R2(test_data$`Price Euros`, rep(mean(train_data$`Price Euros`), length(test_data$`Price Euros`)))
+
+#Please note that no R2 can be calculated as all the values are the same, resulting in a variance of 0
+
+
+# Train random forest model
+rf_model <- train(`Price Euros` ~ Rating + ReviewsCount + Area,
+                  data = train_data, 
+                  method = "rf",
+                  trControl = trainControl(method = "cv", number = 5),
+                  tuneLength = 5,
+                  importance = TRUE)
+
+# Make predictions using random forest model
+rf_predictions <- predict(rf_model, newdata = test_data)
+test_data$rf_predictions <- rf_predictions
+
+# Calculate RMSE for random forest model
+rf_rmse <- RMSE(test_data$rf_predictions, test_data$`Price Euros`)
+rf_rmse
+
+rf_mae <- MAE(test_data$rf_predictions, test_data$`Price Euros`)
+rf_mae
+
+# Calculate R-squared for random forest model
+rf_rsq <- R2(test_data$rf_predictions, test_data$`Price Euros`)
+rf_rsq
+
+
+
+# Train support vector regression model
+svm_model <- train(`Price Euros` ~ Rating + ReviewsCount + Area, 
+                   data = train_data, 
+                   method = "svmRadial",
+                   trControl = trainControl(method = "cv", number = 5),
+                   tuneLength = 5)
+
+# Make predictions using support vector regression model
+svm_predictions <- predict(svm_model, newdata = test_data)
+
+# Convert predictions back to original scale
+test_data$predicted_price_svm <- svm_predictions
+
+# Calculate RMSE for support vector regression model
+svm_rmse <- RMSE(test_data$predicted_price_svm, test_data$`Price Euros`)
+svm_rmse
+
+svm_mae <- MAE(test_data$predicted_price_svm, test_data$`Price Euros`)
+svm_mae
+
+svm_rsq <- R2(test_data$predicted_price_svm, test_data$`Price Euros`)
+svm_rsq
+
+
+
+# Train linear regression model
+lm_model <- train(`Price Euros` ~ Rating + ReviewsCount + Area , 
+                  data = train_data, 
+                  method = "lm",
+                  trControl = trainControl(method = "cv", number = 5))
+
+# Make predictions using linear regression model
+lm_predictions <- predict(lm_model, newdata = test_data)
+
+# Convert predictions back to original scale
+test_data$predicted_price_lm <- lm_predictions
+
+# Calculate RMSE for linear regression model
+lm_rmse <- RMSE(test_data$predicted_price_lm, test_data$`Price Euros`)
+lm_rmse
+
+lm_mae <- MAE(test_data$predicted_price_lm, test_data$`Price Euros`)
+lm_mae
+
+lm_rsq <- R2(test_data$predicted_price_lm, test_data$`Price Euros`)
+lm_rsq
+
+summary(lm_model)
+
+# Train CART model
+cart_model <- train(`Price Euros` ~ Rating + ReviewsCount + Area, 
+                    data = train_data, 
+                    method = "rpart",
+                    trControl = trainControl(method = "cv", number = 5))
+
+# Make predictions using CART model
+cart_predictions <- predict(cart_model, newdata = test_data)
+
+# Convert predictions back to original scale
+test_data$predicted_price_cart <- cart_predictions
+
+# Calculate RMSE for CART model
+cart_rmse <- RMSE(test_data$predicted_price_cart, test_data$`Price Euros`)
+cart_rmse
+
+cart_mae <- MAE(test_data$predicted_price_cart, test_data$`Price Euros`)
+cart_mae
+
+cart_rsq <- R2(test_data$predicted_price_cart, test_data$`Price Euros`)
+cart_rsq
+
+#Create data frame with model names and metrics to assess which is better
+# Combine metrics into data frame
+model_names <- c("Naive Model", "Random Forest", "Support Vector Regression", "Linear Regression", "CART")
+r_squared <- c(naive_rsq, rf_rsq, svm_rsq, lm_rsq, cart_rsq)
+mae <- c(naive_mae, rf_mae, svm_mae, lm_mae, cart_mae)
+rmse <- c(naive_rmse, rf_rmse, svm_rmse, lm_rmse, cart_rmse)
+Model_metrics <- data.frame(model_names, r_squared, mae, rmse)
+
+# Display table of model metrics
+Model_metrics
+
+
+
+#Feature extraction & Hyper-parameters Tuning for the 3 best performing models!----
+
+#Random Forest
+
+# Define the training control with cross-validation
+train_control <- trainControl(method = "cv", number = 5)
+
+# Define the search grid for hyperparameter tuning
+tune_grid <- expand.grid(mtry = c(1:50))
+
+
+# Train random forest model with hyperparameter tuning and feature selection
+rf_model_1 <- train(`Price Euros` ~ Rating + ReviewsCount + Area,
+                  data = train_data,
+                  method = "rf",
+                  trControl = train_control,
+                  tuneGrid = tune_grid,
+                  preProcess = c("center", "scale"), # feature scaling
+                  tuneLength = 5, # number of combinations of tuning parameters to try
+                  importance = TRUE)
+
+
+
+# Print the optimal tuning parameters and the associated RMSE
+rf_model_1
+
+# Make predictions using the trained random forest model
+rf_predictions_1 <- predict(rf_model_1, newdata = test_data)
+test_data$rf_predictions_1 <- rf_predictions_1
+
+# Calculate MAE and RMSE for random forest model
+rf_mae_1 <- MAE(test_data$rf_predictions_1, test_data$`Price Euros`)
+rf_rmse_1 <- RMSE(test_data$rf_predictions_1, test_data$`Price Euros`)
+
+# Calculate R-squared for random forest model
+rf_rsq_1 <- R2(test_data$rf_predictions_1, test_data$`Price Euros`)
+
+# Print the evaluation metrics
+print(paste("Random Forest MAE:", round(rf_mae_1, 2)))
+print(paste("Random Forest RMSE:", round(rf_rmse_1, 2)))
+print(paste("Random Forest R-squared:", round(rf_rsq_1, 2)))
+
+# Extract the variable importance measures
+var_imp <- varImp(rf_model_1)
+
+# Plot the variable importance measures
+plot(var_imp, top = 10)
+
+
+
+
+
+#SVM
+#Hyperparameter tuning using grid search
+#Define the parameter grid for tuning
+param_grid <- expand.grid(C = c(0.1, 1, 10), sigma = c(0.1, 1, 10))
+
+#Train support vector regression model with tuned hyperparameters
+svm_model_tuned <- train(`Price Euros` ~ Rating + ReviewsCount + Area,
+                         data = train_data,
+                         method = "svmRadial",
+                         trControl = trainControl(method = "cv", number = 5),
+                         tuneGrid = param_grid)
+
+
+
+# Make predictions using support vector regression model
+svm_predictions_1 <- predict(svm_model_tuned, newdata = test_data)
+
+# Convert predictions back to original scale
+test_data$predicted_price_svm_1 <- svm_predictions_1
+
+# Calculate RMSE, MAE, and R-squared for support vector regression model
+svm_rmse_1 <- RMSE(test_data$predicted_price_svm_1, test_data$`Price Euros`)
+svm_rmse_1
+
+svm_mae_1 <- MAE(test_data$predicted_price_svm_1, test_data$`Price Euros`)
+svm_mae
+
+svm_rsq_1 <- R2(test_data$predicted_price_svm_1, test_data$`Price Euros`)
+svm_rsq
+
+
+#Linear Regression
+library(glmnet)
+
+# Prepare the data
+x <- model.matrix(`Price Euros` ~ Rating + ReviewsCount + Area, data = train_data)
+y <- train_data$`Price Euros`
+
+# Fit the Lasso model using cross-validation to select the optimal value of lambda
+lasso_model <- cv.glmnet(x, y, alpha = 1, nfolds = 10)
+
+# View the coefficients of the selected model
+coef(lasso_model, s = "lambda.min")
+
+# Train the Lasso model using the selected value of lambda
+lasso_fit <- glmnet(x, y, alpha = 1, lambda = lasso_model$lambda.min)
+
+# Prepare the test data
+x_test <- model.matrix(`Price Euros` ~ Rating + ReviewsCount + Area, data = test_data)
+y_test <- test_data$`Price Euros`
+
+# Make predictions on the test data
+y_pred <- predict(lasso_fit, newx = x_test)
+
+# Calculate evaluation metrics
+Rsq <- cor(y_test, y_pred)^2
+MAE <- mean(abs(y_test - y_pred))
+aRMSE <- sqrt(mean((y_test - y_pred)^2)) / mean(y_test)
+
+# View the evaluation metrics
+cat(paste0("Rsq: ", Rsq, "\n"))
+cat(paste0("MAE: ", MAE, "\n"))
+cat(paste0("RMSE: ", RMSE, "\n"))
+
+
+
+
+
+
+
+
+
+
+
+
+
