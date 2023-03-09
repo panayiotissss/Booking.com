@@ -160,8 +160,55 @@ In general, a higher rating is associated with a higher price, while the relatio
 
 In this section, the cleaned and prepared hotels dataset will be used in order to develop predictive models that can  estimate the price of a hotel as accurately as possible based on its characteristics. The goal is to identify which variables are the most important predictors of hotel price, and to develop models that can be used to inform pricing decisions and improve revenue management. The models will be evaluated based on performance and  will be compared based on their accuracy using a variety of metrics. 
 
+After training several  models on the data and evaluating the results on a hold out sample we get the following resutlts.
+
+| Model names                | R-squared | MAE     | RMSE    |
+|----------------------------|-----------|---------|---------|
+| Naive Model                | NA        | 31.4068 | 41.1054 |
+| Random Forest              | 0.4153    | 26.0136 | 32.9815 |
+| Support Vector Regression  | 0.4062    | 24.2001 | 33.1185 |
+| Linear Regression          | 0.4194    | 23.7236 | 31.7170 |
+| CART                       | 0.1907    | 28.4708 | 37.6821 |
 
 
+We used R-squared, mean absolute error (MAE), and root mean squared error (RMSE) as evaluation metrics for each model. The Naive Model simply predicted the mean hotel price for all hotels, and therefore had no R-squared value. The other models outperformed the Naive Model in terms of all three evaluation metrics.
+
+After performing hyperparameter tuning and feature selection on the models, it was found that the Random Forest and SVM models stayed relatively the same in terms of their performance. The MAE, RMSE, and R-squared values for both models were comparable, with the Random Forest model having an MAE of 24.72, RMSE of 31.85, and R-squared of 0.42, and the SVM model having an MAE of 24.20, RMSE of 31.96, and R-squared of 0.41. This suggests that the feature selection and hyperparameter tuning did not have a significant impact on the performance of these models. However, it should be noted that both models outperformed the Naive Model and CART, with the Random Forest model having the highest R-squared value among all the models. The Multiple Linear Regression model had comparable performance to the Random Forest and SVM models, with an MAE of 24.53, RMSE of 31.92, and R-squared of 0.41. Overall, the Random Forest and SVM models appear to be robust to feature selection and hyperparameter tuning, and are recommended for predicting the prices of hotels.
+
+| Model | MAE | RMSE | R-squared |
+|-------|-----|------|-----------|
+| Random Forest | 24.72 | 31.85 | 0.42 |
+| SVM | 24.20 | 31.96 | 0.41 |
+| Multiple Linear Regression | 24.53 | 31.92 | 0.41 |
+
+
+Based on the evaluation metrics, the best performing model among the three models tested is the Linear Regression model. It achieved the lowest MAE of 23.72 and the highest R-squared value of 0.42, indicating that 42% of the variance in the target variable can be explained by the independent variables in the model. The feature selection and hyperparameter tuning did not result in a significant improvement in the model's performance compared to the original model, but it still outperformed the other models. Therefore, the Linear Regression model can be used to predict the prices of the hotels in the dataset with reasonable accuracy.
+
+
+In the given dataset, the R-squared value of the Linear Regression model is 0.42, which means that the model can explain 42% of the variability in the target variable. While this value may seem relatively low, it is still considered reasonable for a model predicting residential property prices.
+
+One reason for the relatively low R-squared value is that there may be many factors influencing property prices that are not captured by the independent variables in the model. For example, location, neighborhood amenities, and the condition of the property may all play a significant role in determining the price of a residential property, but these factors may not be included in the dataset or captured by the available features.
+
+Another reason for the relatively low R-squared value is that there may be measurement errors or noise in the data that make it difficult to accurately predict the target variable. These errors and noise can be caused by a variety of factors, such as data collection methods, sampling bias, or random fluctuations in the data.
+
+Overall, while the R-squared value of 0.42 may be lower than desired, it is still considered reasonable given the complexity of predicting residential property prices and the limitations of the available data.
+
+
+Based on the information provided, an MAE of 23.72 for predicting residential property prices with a range of 48 to 242 and a mean of 126 can be considered relatively small and therefore a good indicator of the model's accuracy.
+
+In this case, an MAE of 23.72 means that the average absolute difference between the predicted and actual prices of residential properties is $23.72. This represents only about 19% of the mean value of the target variable (i.e., 23.72/126 = 0.188).
+
+Given that the target variable has a relatively small range and a moderate mean value, an MAE of 23.72 suggests that the Linear Regression model is able to make reasonably accurate predictions. 
+
+
+
+# <span style="color:blue">Conclusion</span>
+
+Overall, our findings demonstrate the importance of exploratory data analysis and regression analysis in building predictive models for hotel prices. Our study provides valuable insights into the factors that influence hotel prices, which can be used to inform pricing strategies and decision-making in the hospitality industry.
+
+However, it's important to note that our study has several limitations. First, the dataset only includes a limited set of variables, which may not fully capture the complexity of hotel pricing. Second, our models were trained and evaluated using cross-validation techniques, but their performance may vary in real-world settings. Therefore, further research is needed to validate our findings and explore additional factors that may influence hotel prices.
+
+In conclusion, our study highlights the potential of machine learning techniques to predict hotel prices and provides a foundation for future research in this area. Our findings have practical implications for hotel managers and marketers, who can leverage the insights gained from our analysis to optimize their pricing strategies and enhance their competitive advantage in the market.
 
 
 
