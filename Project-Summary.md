@@ -1,3 +1,5 @@
+**EXPLARATORY ANALYSIS**
+
 After the data was donwloaded from kaggle and loaded into R,
 
 The data cleaning process begins by removing unnecessary columns from the data set. 
@@ -100,5 +102,64 @@ These regression analyses examine the relationship between price, rating, and re
     </td>
   </tr>
 </table>
+
+
+Next,  cities were added into the mix by splitting the data into major and minor cities based on a predefined list. We then created linear regression models for each group and found that for the major cities, only rating was a significant predictor of price while for the rest of the locations, both rating and reviews count were significant. We compared the coefficients of the predictor variables between the two models and visualized the data with scatter plots. Overall, this analysis provides insights into the different factors that influence hotel prices in major cities versus minor cities.
+
+
+
+<table>
+  <tr>
+    <td>
+      <img src= https://github.com/panayiotissss/Booking.com/blob/790ca78f40927123b2882527e7a0222192304fa1/vizualizations/Major%20cities%20model.png alt="Price" width="400"/>
+    </td>
+    <td>
+      <img src= https://github.com/panayiotissss/Booking.com/blob/790ca78f40927123b2882527e7a0222192304fa1/vizualizations/rest%20of%20locations%20model.png alt="Rating" width="400"/>
+    </td>
+    </td>
+  </tr>
+</table>
+
+
+
+Next, we performed regressions on individual cities to examine how the relationships between the predictor variables and hotel prices differ by city. W
+Overall, this analysis provides insights into how different factors impact hotel prices in different locations. By examining these relationships at a more granular level, we can better understand the factors that contribute to hotel prices in different cities and potentially use this information to make more informed pricing decisions in the future.
+
+In general, a higher rating is associated with a higher price, while the relationship between the number of reviews and the price is less consistent across the different cities. The results can be used to make predictions about the price of accommodation in each city based on their rating and review count.
+
+| City        | Intercept | Rating | ReviewsCount |
+|-------------|-----------|--------|--------------|
+| Amsterdam   | -194.26   | 39.70  | 0.03        |
+| Bemelen     | 238.16    | -0.76  | -0.09       |
+| Breda       | -177.82   | 32.63  | 0.02        |
+| Delft       | -219.60   | 43.26  | -0.04       |
+| Den Bosch   | -107.50   | 29.34  | -0.03       |
+| Eindhoven   | -232.65   | 40.19  | -0.02       |
+| Groningen   | -197.20   | 35.63  | 0.00        |
+| Haarlem     | -313.40   | 52.64  | -0.00       |
+| The Hague   | -332.81   | 54.73  | -0.02       |
+| Hoofddorp   | -35.56    | 15.40  | 0.02        |
+| Leeuwarden  | -80.16    | 22.64  | -0.01       |
+| Maastricht  | 405.20    | -21.48 | -0.03       |
+| Middelburg  | -9.59     | 14.41  | 0.02        |
+| Nijmegen    | 34.25     | 11.02  | -0.01       |
+| Roermond    | -119.60   | 27.69  | -0.01       |
+| Rotterdam   | -467.89   | 63.01  | 0.04        |
+| Scheveningen| 60.12     | 14.46  | -0.03       |
+| Utrecht     | -230.80   | 41.17   | 0.01       |
+| Valkenburg  | 27.01     | 11.39   | 0.01       |
+| Vlissingen  | 23.60     | 13.46   | -0.01      |
+| Voorthuizen | 179.71    | -6.24   | 0.00       |
+| Zandvoort   | 53.48     | 9.13    | 0.05       |
+| Zwolle      | -119.78   | 24.54   | 0.03       |
+
+
+
+
+**Predictive Modeling**
+
+In this section, the cleaned and prepared hotels dataset will be used in order to develop predictive models that can  estimate the price of a hotel as accurately as possible based on its characteristics. The goal is to identify which variables are the most important predictors of hotel price, and to develop models that can be used to inform pricing decisions and improve revenue management. The models will be evaluated based on performance and  will be compared based on their accuracy using a variety of metrics. 
+
+
 
 
