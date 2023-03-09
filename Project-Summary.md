@@ -1,4 +1,4 @@
-**EXPLARATORY ANALYSIS**
+# <span style="color:blue"> Exploratory Analysis </span>
 
 After the data was donwloaded from kaggle and loaded into R,
 
@@ -156,9 +156,11 @@ In general, a higher rating is associated with a higher price, while the relatio
 
 
 
-**Predictive Modeling**
+# <span style="color:blue">Predictive Modeling</span>
 
 In this section, the cleaned and prepared hotels dataset will be used in order to develop predictive models that can  estimate the price of a hotel as accurately as possible based on its characteristics. The goal is to identify which variables are the most important predictors of hotel price, and to develop models that can be used to inform pricing decisions and improve revenue management. The models will be evaluated based on performance and  will be compared based on their accuracy using a variety of metrics. 
+
+
 
 
 
